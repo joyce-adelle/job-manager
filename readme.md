@@ -1,6 +1,6 @@
 ## Job (DAG) Management Application, Spring Boot
 
-Application that simulates creating and running DAGs on Apache Airflow
+Application that simulates creating and running DAGs on Apache Airflow by Creating DAG python scripts and Mocking Airflow's API
 
 ## Documentation:
 
@@ -27,7 +27,11 @@ id: `sample_dag_1`
 id: `sample_dag_2`
 id: `sample_dag_3`
 
-Any created DAG can also be ran with it's returned id
+Any created DAG can also be run with it's returned id
+
+## Application Configuration:
+- Default profile is dev which mocks Airflow Api, if changed will assume actual connection to Airflow.
+- DAG python scripts are saved in ./airflow/dag, location can be configured in application.yml
 
 ## How to run and test the code
 
@@ -37,4 +41,4 @@ Any created DAG can also be ran with it's returned id
 - View documentation at swagger URL above
 - API uses basic authentication, use test users credentials above
 - Follow defined schema to test each endpoint
-- To run DAG, create and use returned Id or test DAGs above 
+- To run DAG, create and use returned Id or test DAGs above
