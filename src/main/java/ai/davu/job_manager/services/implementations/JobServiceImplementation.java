@@ -4,6 +4,7 @@ import ai.davu.job_manager.dtos.requests.CreateJobRequest;
 import ai.davu.job_manager.integrations.airflow.AirflowClient;
 import ai.davu.job_manager.models.Job;
 import ai.davu.job_manager.models.JobRun;
+import ai.davu.job_manager.models.JobTask;
 import ai.davu.job_manager.services.JobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +24,20 @@ public class JobServiceImplementation implements JobService {
     @Override
     public Job createJob(CreateJobRequest request) {
         return airflowClient.createJob(Job.builder()
-                //to ensure uniqueness of Id
-                .id(request.getName() + generateRandomNumber())
-                .endDate(request.getEndDate())
-                .startDate(request.getStartDate())
-                .scheduleInterval(request.getScheduleInterval())
-                .description(request.getDescription())
-                .build());
+                        //to ensure uniqueness of Id
+                        .id(request.getName() + generateRandomNumber())
+                        .endDate(request.getEndDate())
+                        .startDate(request.getStartDate())
+                        .scheduleInterval(request.getScheduleInterval())
+                        .description(request.getDescription())
+                        .build(),
+                request.getTasks().stream().map(task -> JobTask.builder()
+                        .id(task.getName())
+                        .scheduleInterval(task.getScheduleInterval())
+                        .startDate(task.getStartDate())
+                        .endDate(task.getEndDate())
+                        .command(task.getCommand())
+                        .build()).toList());
     }
 
     @Override
