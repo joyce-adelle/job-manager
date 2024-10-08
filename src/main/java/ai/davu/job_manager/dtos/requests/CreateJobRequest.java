@@ -1,6 +1,7 @@
 package ai.davu.job_manager.dtos.requests;
 
 import ai.davu.job_manager.utils.validations.cron.ValidCron;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -10,6 +11,7 @@ import java.util.List;
 @Data
 public class CreateJobRequest {
 
+    @NotBlank
     private String name;
 
     private String description;
