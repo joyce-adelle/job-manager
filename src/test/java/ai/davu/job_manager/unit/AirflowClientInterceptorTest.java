@@ -34,6 +34,19 @@ class AirflowClientInterceptorTest extends BaseTest {
     AirflowClientInterceptor interceptor = new AirflowClientInterceptor(new ObjectMapper());
 
     @Test
+    void testInterceptCheckEndpoint() throws IOException, URISyntaxException {
+
+        when(request.getURI()).thenReturn(new URI("http://localhost:8080/api/experimental/test"));
+        when(request.getMethod()).thenReturn(HttpMethod.GET);
+
+        ClientHttpResponse response = interceptor.intercept(request, new byte[0], execution);
+
+        verify(execution, times(0)).execute(eq(request), any());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+    }
+
+    @Test
     void testInterceptUnknownEndpoint() throws IOException, URISyntaxException {
 
         when(request.getURI()).thenReturn(new URI("http://localhost:8080/api/experimental/dags/tasks"));
