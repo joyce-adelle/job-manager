@@ -4,10 +4,15 @@ import ai.davu.job_manager.integrations.BaseClient;
 import ai.davu.job_manager.integrations.airflow.models.DAGRun;
 import ai.davu.job_manager.models.Job;
 import ai.davu.job_manager.models.JobRun;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
@@ -16,21 +21,27 @@ import java.util.Map;
 
 @Slf4j
 @Component
-public class AirFlowClient implements BaseClient {
+public class AirflowClient implements BaseClient {
 
-    @Value("${airflow.api.host}")
-    private String airflowApiHost;
+    private final String airflowApiBaseUrl;
 
-    @Value("${airflow.api.username}")
-    private String username;
+    private final String username;
 
-    @Value("${airflow.api.password}")
-    private String password;
+    private final String password;
+
+    private final ObjectMapper mapper;
 
     private final RestTemplate restTemplate;
 
-    public AirFlowClient(RestTemplate restTemplate) {
+    public AirflowClient(RestTemplate restTemplate, ObjectMapper mapper, @Value("${airflow.api.base.url}") String airflowApiBaseUrl, @Value("${airflow.api.username}") String username, @Value("${airflow.api.password}") String password) {
+
+        this.mapper = mapper;
         this.restTemplate = restTemplate;
+
+        this.airflowApiBaseUrl = airflowApiBaseUrl;
+        this.username = username;
+        this.password = password;
+
         testServer();
         log.info("Airflow Connected!!");
     }
@@ -42,38 +53,56 @@ public class AirFlowClient implements BaseClient {
     }
 
     @Override
-    public Job createJob(Job job) {
+    public Job createJob(@NonNull Job job) {
         return null;
     }
 
     @Override
-    public JobRun runJob(String jobId, Map<String, String> conf) {
+    public JobRun runJob(@NonNull String jobId, Map<String, String> conf) {
 
-        log.info("Request to run DAG id: {}", jobId);
+        try {
 
-        Map<String, Map<String, String>> body = Map.of("conf", conf);
-        HttpEntity<Map<String, Map<String, String>>> entity = new HttpEntity<>(body, createHeaders());
-        ResponseEntity<DAGRun> response = restTemplate.exchange(
-                airflowApiHost + "/dags/" + jobId + "/dag_runs", HttpMethod.POST, entity, DAGRun.class);
+            log.info("Request to run DAG id: {}", jobId);
 
-        if (response.getBody() == null || response.getStatusCode() != HttpStatus.OK)
-            log.error("Error occurred running DAG id: {}, status: {}", jobId, response.getStatusCode());
+            if (jobId.isBlank())
+                return null;
 
-        JobRun jobRun = getJobRun(response.getBody());
-        log.info("Successfully running DAG id: {}, run id: {}", jobId, jobRun.getId());
+            String body;
+            if (conf == null || conf.isEmpty())
+                body = mapper.writeValueAsString(Map.of("conf", mapper.writeValueAsString(Map.of())));
+            else
+                body = mapper.writeValueAsString(Map.of("conf", mapper.writeValueAsString(conf)));
 
-        return jobRun;
+            HttpEntity<String> entity = new HttpEntity<>(body, createHeaders());
+            ResponseEntity<DAGRun> response = restTemplate.exchange(
+                    airflowApiBaseUrl + "/dags/" + jobId + "/dag_runs", HttpMethod.POST, entity, DAGRun.class);
+
+            if (response.getBody() == null || response.getStatusCode() != HttpStatus.OK)
+                log.error("Error occurred running DAG id: {}, status: {}", jobId, response.getStatusCode());
+
+            JobRun jobRun = getJobRun(response.getBody());
+            log.info("Successfully running DAG id: {}, run id: {}", jobId, jobRun.getId());
+
+            return jobRun;
+
+        } catch (JsonProcessingException e) {
+            log.error("Processing error trying to run DAG, error:  ", e);
+            return null;
+        } catch (HttpClientErrorException e) {
+            log.error("Invalid DAG, error:  ", e);
+            return null;
+        }
 
     }
 
     @Override
-    public List<JobRun> getJobRuns(String jobId) {
+    public List<JobRun> getJobRuns(@NonNull String jobId) {
 
         log.info("Request to get all runs for DAG id: {}", jobId);
 
         HttpEntity<String> entity = new HttpEntity<>(createHeaders());
         ResponseEntity<DAGRun[]> response = restTemplate.exchange(
-                airflowApiHost + "/dags/" + jobId + "/dag_runs", HttpMethod.GET, entity, DAGRun[].class);
+                airflowApiBaseUrl + "/dags/" + jobId + "/dag_runs", HttpMethod.GET, entity, DAGRun[].class);
 
         List<JobRun> result;
 
@@ -81,7 +110,7 @@ public class AirFlowClient implements BaseClient {
             result = List.of();
 
         else
-            result = Arrays.stream(response.getBody()).map(AirFlowClient::getJobRun).toList();
+            result = Arrays.stream(response.getBody()).map(this::getJobRun).toList();
 
         log.info("Successfully fetched all runs for DAG id: {}, total: {}", jobId, result.size());
 
@@ -95,24 +124,36 @@ public class AirFlowClient implements BaseClient {
 
         HttpEntity<String> entity = new HttpEntity<>(createHeaders());
         ResponseEntity<Object> response = restTemplate.exchange(
-                airflowApiHost + "/test", HttpMethod.GET, entity, Object.class);
+                airflowApiBaseUrl + "/test", HttpMethod.GET, entity, Object.class);
 
         if (response.getStatusCode() != HttpStatus.OK)
             throw new RuntimeException("Cannot connect to Airflow");
 
     }
 
-    private static JobRun getJobRun(DAGRun data) {
+    private JobRun getJobRun(DAGRun data) {
 
         if (data == null)
             return null;
+
+        Map<String, String> conf = Map.of();
+
+        if (data.getConf() != null && !data.getConf().isBlank()) {
+            try {
+                conf = mapper.readValue(data.getConf(), new TypeReference<>() {
+                });
+            } catch (JsonProcessingException e) {
+                log.error("Error parsing conf: {} ", data.getConf());
+            }
+        }
+
 
         return JobRun.builder()
                 .id(data.getDagRunId())
                 .jobId(data.getDagId())
                 .state(data.getState())
                 .executionDate(data.getExecutionDate())
-                .conf(data.getConf())
+                .conf(conf)
                 .build();
     }
 
