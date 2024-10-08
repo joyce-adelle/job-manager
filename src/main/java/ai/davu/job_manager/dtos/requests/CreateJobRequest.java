@@ -1,5 +1,6 @@
 package ai.davu.job_manager.dtos.requests;
 
+import ai.davu.job_manager.utils.validations.cron.ValidCron;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -13,6 +14,7 @@ public class CreateJobRequest {
 
     private String description;
 
+    @ValidCron
     private String scheduleInterval;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
