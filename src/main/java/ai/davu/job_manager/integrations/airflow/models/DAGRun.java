@@ -24,6 +24,6 @@ public class DAGRun {
     @JsonProperty("execution_date")
     private String executionDate;
 
-    private Map<String, String> conf;
+    private String conf;
 
 }
