@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: job-manager
+  profiles:
+    active: dev
+server:
+  port: 8081
+airflow:
+  dag:
+    dir: ./dags
+  api:
+    base:
+      url: http://localhost:8080/api/experimental
+    username: airflow-username
+    password: airflow-protected-password
+app:
+  auth:
+    first:
+      username: firstUser
+      password: first1password
+    second:
+      username: secondUser
+      password: second2password
