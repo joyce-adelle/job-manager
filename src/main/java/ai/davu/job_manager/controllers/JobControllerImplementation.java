@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JobControllerImplementation implements JobController {
 
-    JobService jobService;
+    private final JobService jobService;
 
     @Override
     @PostMapping
