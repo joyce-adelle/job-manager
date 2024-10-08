@@ -1,9 +1,8 @@
 package ai.davu.job_manager.integrations.airflow.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
-
-import java.util.Map;
 
 @Setter
 @Getter
@@ -11,6 +10,7 @@ import java.util.Map;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DAGRun {
 
     @JsonProperty("dag_run_id")
