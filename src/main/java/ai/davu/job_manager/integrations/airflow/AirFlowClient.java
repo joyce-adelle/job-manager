@@ -1,6 +1,7 @@
 package ai.davu.job_manager.integrations.airflow;
 
 import ai.davu.job_manager.integrations.BaseClient;
+import ai.davu.job_manager.integrations.airflow.interceptors.AirflowClientInterceptor;
 import ai.davu.job_manager.integrations.airflow.models.DAGRun;
 import ai.davu.job_manager.models.Job;
 import ai.davu.job_manager.models.JobRun;
@@ -54,7 +55,11 @@ public class AirflowClient implements BaseClient {
 
     @Override
     public Job createJob(@NonNull Job job) {
-        return null;
+
+        //Mocking Airflow's check of the DAG folder to create DAGs
+        AirflowClientInterceptor.refreshAirflowDAGs(job.getId());
+        return job;
+
     }
 
     @Override
