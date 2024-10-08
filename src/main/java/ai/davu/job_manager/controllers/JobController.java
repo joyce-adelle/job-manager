@@ -27,7 +27,7 @@ public interface JobController {
     ResponseEntity<ApiResponse<Job>> createJob(@RequestBody @Valid CreateJobRequest request, HttpServletRequest httpServletRequest);
 
     @Operation(summary = "Run a Job", description = "Run a job by it's id, allows for configurations, 'conf', in the query parameters")
-    ResponseEntity<ApiResponse<JobRun>> runJob(@PathVariable("id") @NotBlank(message = "Job id is required") String id, @RequestBody(required = false) @Valid RunJobRequest request, HttpServletRequest httpServletRequest);
+    ResponseEntity<ApiResponse<JobRun>> runJob(@PathVariable("id") @NotBlank(message = "Job id is required") String id, @RequestBody @Valid RunJobRequest request, HttpServletRequest httpServletRequest);
 
     @Operation(summary = "Get All Job Runs", description = "Get all the runs on this job (DAG) by it's id")
     ResponseEntity<ApiResponse<List<JobRun>>> getJobRuns(@PathVariable("id") @NotBlank(message = "Job id is required") String id, HttpServletRequest httpServletRequest);
