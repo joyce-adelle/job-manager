@@ -1,7 +1,10 @@
 package ai.davu.job_manager.dtos.requests;
 
 import ai.davu.job_manager.utils.validations.cron.ValidCron;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -25,6 +28,7 @@ public class CreateJobRequest {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate endDate;
 
-    List<TaskRequest> tasks;
+    @NotEmpty(message = "At least one task is required")
+    List< @NotNull @Valid TaskRequest> tasks;
 
 }

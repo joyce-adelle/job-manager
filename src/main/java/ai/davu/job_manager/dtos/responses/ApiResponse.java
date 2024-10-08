@@ -12,6 +12,7 @@ import java.time.Instant;
 public class ApiResponse<T> {
 
 	private Instant timeStamp;
+	private boolean isSuccessful;
 	private T data;
 	private int status;
 	private String path;
